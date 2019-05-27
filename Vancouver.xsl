@@ -72,6 +72,7 @@
         <b:ImportantField>b:Issue</b:ImportantField>
         <b:ImportantField>b:Month</b:ImportantField>
         <b:ImportantField>b:Year</b:ImportantField>
+	<b:ImportantField>b:DOI</b:ImportantField>
       </source>
       <source type="ArticleInAPeriodical">
         <b:ImportantField>b:Author/b:Author/b:NameList</b:ImportantField>
@@ -150,8 +151,8 @@
       </source>
     </importantfields>
     <citation>
-      <openbracket>(</openbracket>
-      <closebracket>)</closebracket>
+      <openbracket></openbracket>
+      <closebracket></closebracket>
       <separator>,</separator>
       <source type="Book">
         <format>{%RefOrder%}</format>
@@ -224,7 +225,7 @@
         <column id="2">
           <halign>left</halign>
           <valign>top</valign>
-          <format>{%Author:1%. }{%Title%. }{%JournalName%. }{%Year%{ %Month:s%{ %Day%}}};{ %Volume%}{(%Issue%)}{: %Pages:p. :p. %}.</format>
+          <format>{%Author:1%. }{%Title%. }{%JournalName%. }{%Year%{ %Month:s%{ %Day%}}};{ %Volume%}{(%Issue%)}{: %Pages:p. :p. %}{ |DOI: %DOI%}.</format>
         </column>
         <sortkey></sortkey>
       </source>
@@ -446,14 +447,32 @@
   <xsl:template match="/">
 
     <xsl:choose>
-      <!-- Gets the name of the style as it will be displayed in Word 2007. -->
+      <!-- Gets the name of the style as it will be displayed in Word 2007 / 2010. -->
       <xsl:when test="b:StyleName">
         <xsl:value-of select="msxsl:node-set($data)/general/stylename"/>
       </xsl:when>
 
-      <!-- Gets the version information for the style. -->
+      <!-- Gets the version information for the style in Word 2007 / 2010. -->
       <xsl:when test="b:Version">
         <xsl:value-of select="msxsl:node-set($data)/general/version"/>
+      </xsl:when>
+
+      <!-- Sets a version number in Word 2013. -->
+      <xsl:when test="b:XslVersion">
+        <xsl:choose>
+          <xsl:when test="msxsl:node-set($data)/general/version2013">
+            <xsl:value-of select="msxsl:node-set($data)/general/version2013"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <!-- Fallback method : use a dummy version number of 1. -->
+            <xsl:text>1</xsl:text>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:when>
+
+      <!-- Set the name of the style in Word 2013. -->
+      <xsl:when test="b:StyleNameLocalized">
+        <xsl:value-of select="msxsl:node-set($data)/general/stylename"/>
       </xsl:when>
 
       <!-- Gets a description of the style. (Word 2008 or later) -->
@@ -1908,7 +1927,7 @@
       </xsl:variable>
 
       <!-- Format the corporate parameter. -->
-      
+
       <!-- Abbreviate the corporate parameter if necessary. -->
       <xsl:variable name="corp">
         <xsl:choose>
@@ -1952,8 +1971,8 @@
           </xsl:otherwise>
         </xsl:choose>
       </xsl:variable>
-      
-      <!-- Set the case. -->      
+
+      <!-- Set the case. -->
       <xsl:choose>
         <xsl:when test="contains($options, 'u')">
           <xsl:call-template name="upper-case">
@@ -2214,8 +2233,8 @@
     </xsl:choose>
   </xsl:template>
 
-  
-  
+
+
   <!-- Formats an URL. -->
   <xsl:template name="format-url">
     <!-- URL to format. -->
@@ -2247,16 +2266,16 @@
         </xsl:when>
         <!-- Don't manipulate URL for display. -->
         <xsl:otherwise>
-          <xsl:value-of select="$url"/>    
+          <xsl:value-of select="$url"/>
         </xsl:otherwise>
-      </xsl:choose>     
+      </xsl:choose>
 
       <!-- Close tag. -->
       <xsl:if test="contains($options, 'l')">
         <xsl:text>&lt;/a&gt;</xsl:text>
       </xsl:if>
     </xsl:if>
-    
+
   </xsl:template>
 
   <!-- Adds zero-width spaces to a string to allow splitting long strings over multiple lines. -->
@@ -2285,9 +2304,9 @@
         <xsl:value-of select="$string"/>
       </xsl:otherwise>
     </xsl:choose>
-    
+
   </xsl:template>
-  
+
   <!-- Formats a year. -->
   <xsl:template name="format-year">
     <!-- A year to format. -->
@@ -2315,7 +2334,7 @@
     <xsl:param name="type"/>
     <!-- Options (s: use pre-defined string, u: uppercase, l: lowercase) -->
     <xsl:param name="options"/>
-    
+
     <!-- Check if the string needs replacement. -->
     <xsl:variable name="stype">
       <xsl:choose>
@@ -2327,7 +2346,7 @@
         </xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-    
+
     <!-- Adjust the case. -->
     <xsl:choose>
       <xsl:when test="contains($options, 'u')">
@@ -2344,16 +2363,16 @@
         <xsl:value-of select="$stype"/>
       </xsl:otherwise>
     </xsl:choose>
-    
+
   </xsl:template>
-  
+
   <!-- Formats a page or a range of pages. -->
   <xsl:template name="format-pages">
     <!-- A single page number or a range of page numbers. -->
     <xsl:param name="pages"/>
     <!-- Options (single page prefix:multi page prefix:extra options). -->
     <xsl:param name="options" select="'p. :pp. '"/>
-    
+
     <!-- Retrieve the single page prefix. -->
     <xsl:variable name="singlePagePrefix">
       <xsl:call-template name="substring-before-ex">
@@ -2383,7 +2402,7 @@
     <xsl:variable name="multiPageSeparator">
       <xsl:value-of select="substring(translate($pages, translate($pages, $multiPageSeparators, ''), ''), 1, 1)"/>
     </xsl:variable>
-    
+
     <xsl:if test="string-length($pages) > 0">
       <!-- Check if this is about a single page, or a range of them to get the correct prefix. -->
       <xsl:choose>
@@ -2722,12 +2741,12 @@
         <xsl:otherwise>
           <xsl:value-of select="$month"/>
         </xsl:otherwise>
-      </xsl:choose>     
+      </xsl:choose>
     </xsl:variable>
 
     <!-- Get the text to display. -->
     <xsl:variable name="month3">
-      <xsl:choose>        
+      <xsl:choose>
         <!-- Check for month to string conversion. -->
         <xsl:when test="contains($options, 's') and string(number($month2)) != 'NaN' and string-length(msxsl:node-set($data)/strings/months/month[@number = number($month2)]) > 0">
           <xsl:value-of select="msxsl:node-set($data)/strings/months/month[@number = number($month2)]"/>
@@ -2743,14 +2762,14 @@
             <xsl:text>0</xsl:text>
           </xsl:if>
           <xsl:value-of select="$month2"/>
-        </xsl:when>        
+        </xsl:when>
         <!-- Otherwise keep using the original value. -->
         <xsl:otherwise>
           <xsl:value-of select="$month2"/>
         </xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-    
+
     <!-- Adjust the case. -->
     <xsl:choose>
       <xsl:when test="contains($options, 'u')">
@@ -2788,7 +2807,7 @@
         </xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-    
+
     <!-- Check if the number should always be presented by 2 digits. -->
     <xsl:variable name="temp1">
       <xsl:choose>
@@ -2838,7 +2857,7 @@
     <xsl:value-of select="$temp3"/>
 
   </xsl:template>
-  
+
   <!-- Formats a given title. -->
   <!--   Note: in case the subtitle (s option) is requested, and there is none, the result will be empty. -->
   <xsl:template name="format-title">
@@ -3399,7 +3418,7 @@
     <xsl:param name="source"/>
 
     <!-- Retrieve the format string depending on the type of source. -->
-    <xsl:variable name="formatstring">      
+    <xsl:variable name="formatstring">
       <xsl:choose>
         <!-- Placeholders. -->
         <xsl:when test="string-length($source/b:SourceType) = 0 and string-length(msxsl:node-set($data)/bibliography/source[@type = 'Placeholder']/format) > 0">
@@ -3410,12 +3429,12 @@
           <xsl:value-of select="msxsl:node-set($data)/bibliography/source[@type = $source/b:Type]/sortkey"/>
         </xsl:when>
         <!-- SourceType. (Normal type) -->
-        <xsl:otherwise>        
+        <xsl:otherwise>
           <xsl:value-of select="msxsl:node-set($data)/bibliography/source[@type = $source/b:SourceType]/sortkey"/>
         </xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-    
+
     <!-- Process the actual format string. -->
     <xsl:variable name="sortkey">
       <xsl:call-template name="format-source">
@@ -3441,11 +3460,11 @@
         </xsl:otherwise>
       </xsl:choose>
     </b:SortKey>
-    
+
   </xsl:template>
-  
+
   <!-- Informative variable indicating which version of BibWord this is. -->
   <xsl:variable name="version">
-    <xsl:text>2.8</xsl:text>
+    <xsl:text>2.9</xsl:text>
   </xsl:variable>
 </xsl:stylesheet>
